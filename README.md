@@ -1,6 +1,8 @@
 
 # Vue Material Admin
 
+--
+
 ## Plan and features
 * will create a new template by vue-cli 3.x 
 * will remove some useless code becuase of the vuetify framework updates  
