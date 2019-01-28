@@ -8,15 +8,16 @@
               <v-card-text>
                 <div class="layout column align-center">
                   <img src="/static/m.png" alt="Vue Material Admin" width="120" height="120">
-                  <h1 class="flex my-4 primary--text">登陆</h1>
+                  <h1 class="flex my-4 primary--text">PEM LIMS</h1>
+                  <font size=3>实验室管理系统</font>
                 </div>                
                 <v-form>
-                  <v-text-field append-icon="person" name="username" label="Login" type="text" v-model="username"></v-text-field>
-                  <v-text-field append-icon="lock" name="password" label="Password" id="password" type="password" v-model="password"></v-text-field>
+                  <v-text-field append-icon="person" name="username" label="用户名" type="text" v-model="username"></v-text-field>
+                  <v-text-field append-icon="lock" name="password" label="密码" id="password" type="password" v-model="password"></v-text-field>
                 </v-form>
               </v-card-text>
               <v-card-actions>
-                <v-btn icon>
+                <!-- <v-btn icon>
                   <v-icon color="blue">fa fa-facebook-square fa-lg</v-icon>
                 </v-btn>
                 <v-btn icon>
@@ -24,7 +25,7 @@
                 </v-btn>
                 <v-btn icon>
                   <v-icon color="light-blue">fa fa-twitter fa-lg</v-icon>
-                </v-btn>
+                </v-btn> -->
                 <v-spacer></v-spacer>
                 <v-btn block color="primary" @click="login" :loading="loading">Login</v-btn>
               </v-card-actions>

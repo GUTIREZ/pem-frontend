@@ -1,7 +1,7 @@
 const Menu =  [
   { header: 'Apps' },
   {
-    title: 'Dashboard',
+    title: '控制台',
     group: 'apps',
     icon: 'dashboard',
     name: 'Dashboard',
