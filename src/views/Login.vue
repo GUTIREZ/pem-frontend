@@ -49,7 +49,13 @@ export default {
   methods: {
     login () {
       this.$store.dispatch('clearError')
-      this.$store.dispatch('signUserIn', { username: this.username, password: this.password })
+      // this.$store.dispatch('signUserIn', { username: this.username, password: this.password })
+      this.$store.dispatch('signIn', { username: this.username, password: this.password })
+      this.$store.dispatch('setUser')
+
+      
+      commit('setLayout', 'layout-admin')
+      router.push('/dashboard')
     }
   }
 

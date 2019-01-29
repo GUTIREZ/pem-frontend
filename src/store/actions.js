@@ -4,7 +4,110 @@ import router from '../router'
 // const USE_OTP = process.env.VUE_APP_USE_OTP || '' // set to true in production
 
 const USE_OTP = process.env.VUE_APP_USE_OTP || '' // set to true in production
+const TOKEN = 'token'
+const REFRESH_TOKEN = 'refreshToken'
 export default {
+
+  async signIn({ commit }, payload) {
+    commit('setLoading', true)
+    commit('setError', null)
+    let rv = null
+    const {
+      username,
+      password
+    } = payload
+    try {
+      rv = await http.post('/auth', { username, password })
+      console.info('====>>>> TOKEN: ' + rv.data.token)
+      http.defaults.headers.common['Authorization'] = 'Bearer ' + rv.data.token
+
+      console.info('====>>>> REFRESH_TOKEN: ' + rv.data.refreshToken)
+
+      localStorage.removeItem(TOKEN)
+      localStorage.setItem(TOKEN, rv.data.token)
+      commit('setToken', rv.data.token)
+
+      localStorage.removeItem(REFRESH_TOKEN)
+      localStorage.setItem(REFRESH_TOKEN, rv.data.refreshToken)
+
+      commit('setLayout', 'layout-admin')
+      router.push('/dashboard')
+    } catch (e) {
+      commit('setError', {
+        message: 'Sign In Error:' + err.message
+      })
+    }
+    commit('setLoading', false)
+  },
+
+  async setUser( {commit} ) {
+    commit('setLoading', true)
+    commit('setError', null)
+    let user = null
+    try {
+      user = await http.get('/users/me').data
+      console.log('User: ' + JSON.stringify(user.data))
+
+      commit('setUser', user)
+    } catch (e) {
+      commit('setError', {
+        message: 'Get User Error:' + err.message
+      })
+    }
+    commit('setLoading', false)
+  },
+
+  async refreshToken({
+    dispatch,
+    commit
+  }, payload) {
+    commit('setLoading', true)
+    commit('setError', null)
+    let rv = null
+    const {
+      username,
+      password
+    } = payload
+    try {
+      rv = await http.post('/auth', {
+        username,
+        password
+      })
+      dispatch('autoSignIn', rv.data) // token
+    } catch (e) {}
+    if (!rv) {
+      commit('setError', {
+        message: 'Sign In Error'
+      })
+    }
+    commit('setLoading', false)
+  },
+
+  async signOut({
+    dispatch,
+    commit
+  }, payload) {
+    commit('setLoading', true)
+    commit('setError', null)
+    let rv = null
+    const {
+      username,
+      password
+    } = payload
+    try {
+      rv = await http.post('/auth', {
+        username,
+        password
+      })
+      dispatch('autoSignIn', rv.data) // token
+    } catch (e) {
+      commit('setError', {
+        message: 'Sign In Error:' + err.message
+      })
+    }
+    commit('setLoading', false)
+  },
+
   async signUserUp ({ commit }, payload) {
     commit('setLoading', true)
     commit('setError', null)

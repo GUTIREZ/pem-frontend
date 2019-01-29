@@ -5,6 +5,15 @@ const Menu =  [
     group: 'apps',
     icon: 'account_box',
     name: 'Dashboard',
+  }, 
+  {
+    title: '系统管理',
+    group: 'sys',
+    icon: 'widgets',
+    items: [
+      { name: 'user', title: '用户管理', path: 'user'},
+      { name: 'statistic', title: 'Statistic', badge: 'new', path: 'components/statistic'},
+    ]
   },
   {
     title: 'Chat',
@@ -23,7 +32,7 @@ const Menu =  [
   {
     title: 'Media',
     group: 'apps',
-    name: 'Media1',
+    name: 'Media',
     path: '/media',
     // disabled : true,
     // href: '/media',

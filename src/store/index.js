@@ -10,14 +10,15 @@ export const store = new Vuex.Store({
   },
   state: {
     layout: 'layout-default',
+    token: null,
     user: null, // token, verified, (id - maybe to remove) // localStorage.getItem('user-token') || null
     loading: false,
     error: null,
     networkError: false
   },
   mutations: {
-    signUserUp (state, payload) { }, // DISABLED
-    setLayout (state, payload) { state.layout = payload },
+    // signUserUp (state, payload) { }, // DISABLED
+    setToken (state, payload) { state.token = payload },
     setUser (state, payload) {
       if (payload && payload.token) {
         const decoded = jwtDecode(payload.token)
@@ -28,13 +29,17 @@ export const store = new Vuex.Store({
       }
       state.user = payload
     },
+    setLayout(state, payload) {
+      state.layout = payload
+    },
     setLoading (state, payload) { state.loading = payload },
     setError (state, payload) { state.error = payload },
     mutateNetworkError (state, payload) { state.networkError = payload }
   },
   getters: {
-    layout (state) { return state.layout },
+    token (state) { return state.token },
     user (state) { return state.user },
+    layout (state) { return state.layout },
     loading (state) { return state.loading },
     error (state) { return state.error },
     networkError (state) { return state.networkError }
