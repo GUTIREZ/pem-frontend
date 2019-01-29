@@ -163,7 +163,7 @@ export default [
   {
     path: '/components/alert',
     meta: { breadcrumb: true },
-    name: 'components/alerts',
+    name: 'alerts',
     component: () => import(
       `@/views/ui/Alert.vue`
     )
@@ -452,7 +452,7 @@ export default [
     )
   },
   {
-    path: '/widgets/social',
+    path: '/social',
     meta: { breadcrumb: true },
     name: 'components/social',
     component: () => import(
@@ -461,7 +461,7 @@ export default [
     )
   },
   {
-    path: '/widgets/post',
+    path: '/post',
     meta: { breadcrumb: true },
     name: 'components/widget-post',
     component: () => import(
@@ -470,7 +470,7 @@ export default [
     )
   },
   {
-    path: '/widgets/statistic',
+    path: '/statistic',
     meta: { breadcrumb: true },
     name: 'components/statistic',
     component: () => import(
@@ -479,7 +479,7 @@ export default [
     )
   },
   {
-    path: '/widgets/chart',
+    path: '/chart',
     meta: { breadcrumb: true },
     name: 'components/chart',
     component: () => import(
@@ -488,7 +488,7 @@ export default [
     )
   },
   {
-    path: '/widgets/list',
+    path: '/widget-list',
     meta: { breadcrumb: true },
     name: 'components/widget-list',
     component: () => import(

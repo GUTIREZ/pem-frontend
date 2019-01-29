@@ -1,0 +1,43 @@
+
+  
+首次进入、刷新页面、关闭浏览器后重新进入
+  获取localStorage.tokens
+
+  tokens != null
+    使用token获取用户数据
+    加载token到vuex.state.token
+    加载用户信息到vuex.state.user
+    加载登陆状态到vuex.state.isAuthed
+
+  tokens == null
+    清空vuex.state.token
+    清空vuex.state.user
+    清空vuex.state.isAuthed
+    进入登陆页面 
+
+登陆过程
+  登陆成功
+  将token、regreshToken存入localStorage.tokens
+  将token存如vuex.state.token
+  使用token请求获取用户数据
+  加载用户信息到vuex.state.user
+  加载登陆状态到vuex.state.isAuthed
+
+使用系统过程中
+  判断后端返回码，如果返回码 == TOKEN过期
+  使用localStorage.tokens.refreshToken刷新token
+  refreshToken过期
+    则重定向到登陆页面
+  refreshToken未过期（同用户登陆成功）
+    刷新成功
+    将token、regreshToken存入localStorage.tokens
+    将token存如vuex.state.token
+    使用token请求获取用户数据
+    加载用户信息到vuex.state.user
+    加载登陆状态到vuex.state.isAuthed
+
+-- 路由跳转时，判断用户是否登陆
+  https://www.jb51.net/article/126815.htm
+
+-- Vue刷新token，判断token是否过期、失效的最简便的方法
+  https://blog.csdn.net/qq_35430000/article/details/80806846

@@ -49,10 +49,12 @@
                 </v-list-tile>
               </template>
             </v-list-group>
+            <!--fixed header-->
             <v-subheader v-else-if="item.header" :key="i">{{ item.header }}</v-subheader>
+            <!--divider-->
             <v-divider v-else-if="item.divider" :key="i"></v-divider>
             <!--top-level link-->
-            <v-list-tile v-else :to="!item.href ? { name: item.name } : null" :href="item.href" ripple="ripple" :disabled="item.disabled" :target="item.target" rel="noopener" :key="item.name">
+            <v-list-tile v-else :to="!item.path ? { name: item.name } : item.path" :href="item.href" ripple="ripple" :disabled="item.disabled" :target="item.target" rel="noopener" :key="item.name">
               <v-list-tile-action v-if="item.icon">
                 <v-icon>{{ item.icon }}</v-icon>
               </v-list-tile-action>
@@ -112,9 +114,9 @@ export default {
   methods: {
     genChildTarget (item, subItem) {
       if (subItem.href) return;
-      if (subItem.component) {
+      if (subItem.path) {
         return {
-          name: subItem.component,
+          name: subItem.path,
         };
       }
       return { name: `${item.group}/${(subItem.name)}` };
