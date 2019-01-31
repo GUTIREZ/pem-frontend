@@ -1,9 +1,9 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
+import Vue from "vue"
+import Vuex from "vuex"
 // import jwtDecode from 'jwt-decode'
-import actions from './actions'
+import actions from "./actions"
 
-Vue.use(Vuex)
+Vue.use(Vuex);
 
 export const store = new Vuex.Store({
   modules: {},
@@ -69,4 +69,4 @@ export const store = new Vuex.Store({
     }
   },
   actions: { ...actions }
-})
+});
