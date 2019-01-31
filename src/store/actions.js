@@ -22,6 +22,7 @@ export default {
     let tokens = localStorage.getItem(TOKENS)
     if (tokens) {
       dispatch('setToken', tokens)
+      // setToken1(tokens).then(router.push('/dashboard'));
     } else {
       router.push('/login')
     }
@@ -62,6 +63,7 @@ export default {
 
     router.push('/dashboard')
   }
+
   // async signOut({
   //   dispatch,
   //   commit
