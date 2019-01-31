@@ -17,6 +17,13 @@ export default {
     layout () {
       return this.$store.getters.layout
     }
+  },
+  beforeCreate: function() {
+    console.log('beforeCreate')
+    if(!this.$store.getters.token){
+      console.log('token is null')
+      this.$store.dispatch("checkToken")
+    }
   }
 }
 </script>

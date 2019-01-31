@@ -43,13 +43,13 @@ export default {
   },  
   methods: {
     onSuccess() {
-      alert(this.$store.getters.user)
-      // http.get('/users/me').then((res) => { 
-      //   console.log(res)
-      //   })
-      //   .catch((error) => {
-      //     console.log(error)
-      //   })
+      alert(JSON.stringify(this.$store.getters.menu))
+      http.get('/users/me').then((res) => { 
+        console.log(res.data)
+        })
+        .catch((error) => {
+          console.log(error)
+        })
     }
   }
 };

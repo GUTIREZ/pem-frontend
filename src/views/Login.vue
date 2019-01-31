@@ -9,7 +9,7 @@
                 <div class="layout column align-center">
                   <img src="/static/m.png" alt="Vue Material Admin" width="120" height="120">
                   <h1 class="flex my-4 primary--text">PEM LIMS</h1>
-                  <font size=3>实验室管理系统</font>
+                  <!-- <font size=3>实验室管理系统</font> -->
                 </div>                
                 <v-form>
                   <v-text-field append-icon="person" name="username" label="用户名" type="text" v-model="username"></v-text-field>
@@ -48,17 +48,10 @@ export default {
 
   methods: {
     login () {
-      this.$store.dispatch('clearError')
-      // this.$store.dispatch('signUserIn', { username: this.username, password: this.password })
-      this.$store.dispatch('signIn', { username: this.username, password: this.password })
-      this.$store.dispatch('setUser')
-
-      
-      commit('setLayout', 'layout-admin')
-      router.push('/dashboard')
+      this.$store.dispatch("clearError")
+      this.$store.dispatch("signIn", {username:this.username, password:this.password })
     }
   }
-
 };
 </script>
 

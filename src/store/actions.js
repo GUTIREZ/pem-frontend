@@ -3,12 +3,12 @@ import router from '../router'
 
 // const USE_OTP = process.env.VUE_APP_USE_OTP || '' // set to true in production
 
-const USE_OTP = process.env.VUE_APP_USE_OTP || '' // set to true in production
+// const USE_OTP = process.env.VUE_APP_USE_OTP || '' // set to true in production
 const TOKEN = 'token'
 const REFRESH_TOKEN = 'refreshToken'
 export default {
 
-  async signIn({ commit }, payload) {
+  async signIn({ dispatch,commit }, payload) {
     commit('setLoading', true)
     commit('setError', null)
     let rv = null
@@ -18,69 +18,94 @@ export default {
     } = payload
     try {
       rv = await http.post('/auth', { username, password })
-      console.info('====>>>> TOKEN: ' + rv.data.token)
-      http.defaults.headers.common['Authorization'] = 'Bearer ' + rv.data.token
-
-      console.info('====>>>> REFRESH_TOKEN: ' + rv.data.refreshToken)
-
-      localStorage.removeItem(TOKEN)
-      localStorage.setItem(TOKEN, rv.data.token)
-      commit('setToken', rv.data.token)
-
       localStorage.removeItem(REFRESH_TOKEN)
       localStorage.setItem(REFRESH_TOKEN, rv.data.refreshToken)
-
-      commit('setLayout', 'layout-admin')
-      router.push('/dashboard')
+      dispatch('setToken', rv.data.token)
     } catch (e) {
       commit('setError', {
-        message: 'Sign In Error:' + err.message
+        message: 'Sign In Error:' + e.message
       })
     }
     commit('setLoading', false)
   },
 
-  async setUser( {commit} ) {
+  async checkToken( {dispatch, commit} ) {
     commit('setLoading', true)
-    commit('setError', null)
-    let user = null
-    try {
-      user = await http.get('/users/me').data
-      console.log('User: ' + JSON.stringify(user.data))
 
-      commit('setUser', user)
-    } catch (e) {
-      commit('setError', {
-        message: 'Get User Error:' + err.message
-      })
+    var token = localStorage.getItem(TOKEN)
+    let refreshToken = null
+    if(token) {
+      // dispatch('setToken', token)
+      try{
+        commit('setToken', token)
+        http.defaults.headers.common['Authorization'] = 'Bearer ' + token
+        let user = await http.get('/users/me')
+        let menu = await http.get('/menus/me')
+        commit('setUser', user.data)
+        commit('setMenu', menu.data)
+      }catch{
+        refreshToken = localStorage.getItem(REFRESH_TOKEN)
+        if(refreshToken){
+          dispatch('refreshToken')
+        }else{
+          router.push('/login')
+        }
+      }
+      
+    }else {
+      refreshToken = localStorage.getItem(REFRESH_TOKEN)
+      if(refreshToken){
+        dispatch('refreshToken')
+      }else{
+        router.push('/login')
+      }
     }
+
     commit('setLoading', false)
   },
 
-  async refreshToken({
-    dispatch,
-    commit
-  }, payload) {
-    commit('setLoading', true)
-    commit('setError', null)
+  async refreshToken({commit}) {
     let rv = null
-    const {
-      username,
-      password
-    } = payload
     try {
-      rv = await http.post('/auth', {
-        username,
-        password
-      })
-      dispatch('autoSignIn', rv.data) // token
-    } catch (e) {}
-    if (!rv) {
-      commit('setError', {
-        message: 'Sign In Error'
-      })
+      rv = await http.get('/auth/refresh')
+      localStorage.removeItem(REFRESH_TOKEN)
+      localStorage.setItem(REFRESH_TOKEN, rv.refreshToken)
+
+      localStorage.removeItem(TOKEN)
+      localStorage.setItem(TOKEN, rv.token)
+      commit('setToken', rv.token)
+      http.defaults.headers.common['Authorization'] = 'Bearer ' + rv.token
+      let user = await http.get('/users/me')
+      let menu = await http.get('/menus/me')
+      commit('setUser', user.data)
+      commit('setMenu', menu.data)
+
+      // dispatch('setToken', rv.data.token)
+    } catch (e) {
+      localStorage.removeItem(TOKEN)
+      localStorage.removeItem(REFRESH_TOKEN)
+      router.push('/login')
     }
-    commit('setLoading', false)
+  },
+  
+  async setToken( { commit },token ) {
+    try{
+      localStorage.removeItem(TOKEN)
+      localStorage.setItem(TOKEN, token)
+      commit('setToken', token)
+
+      http.defaults.headers.common['Authorization'] = 'Bearer ' + token
+
+      let user = await http.get('/users/me')
+      let menu = await http.get('/menus/me')
+      commit('setUser', user.data)
+      commit('setMenu', menu.data)
+
+      router.push('/dashboard')
+    }catch (e){
+      console.error('setToken Error: ' + e.message)
+      router.push('/login')
+    }
   },
 
   async signOut({
@@ -102,31 +127,12 @@ export default {
       dispatch('autoSignIn', rv.data) // token
     } catch (e) {
       commit('setError', {
-        message: 'Sign In Error:' + err.message
+        message: 'Sign In Error:' + e.message
       })
     }
     commit('setLoading', false)
   },
 
-  async signUserUp ({ commit }, payload) {
-    commit('setLoading', true)
-    commit('setError', null)
-    let rv = null
-    const { email, password } = payload
-    try {
-      rv = await http.post('/signup', { email, password })
-    } catch (e) { 
-      console.info(e)
-    }
-    commit('setLoading', false)
-    if (rv) {
-      // const newUser = {id: user.uid, email: payload.email}
-      // commit('setUser', newUser)
-      commit('setError', { message: 'User Registered' })
-    } else {
-      commit('setError', { message: 'Error Signup' })
-    }
-  },
   async signUserIn ({ dispatch, commit }, payload) {
     commit('setLoading', true)
     commit('setError', null)
@@ -135,81 +141,10 @@ export default {
     try {
       rv = await http.post('/auth', { username, password })
       dispatch('autoSignIn', rv.data) // token
-    } catch (e) { }
+    } catch (e) { console.error(e.message)}
     if (!rv) {
       commit('setError', { message: 'Sign In Error' })
     }
     commit('setLoading', false)
   },
-  async verifyOtp ({ dispatch, commit }, payload) {
-    commit('setLoading', true)
-    commit('setError', null)
-    let rv = null
-    const { pin } = payload
-    try {
-      rv = await http.post('/auth/otp', { pin })
-      console.log('rv', rv)
-      // localStorage.setItem('user-token', token) // store the token in localstorage
-      dispatch('autoVerify', rv.data) // token
-    } catch (e) { }
-    if (!rv) {
-      // localStorage.removeItem('user-token') // if the request fails, remove any possible user token if possibl
-      commit('setError', { message: 'Verify Error' })
-    }
-    commit('setLoading', false)
-  },
-
-  async logout ({ commit }, payload) {
-    commit('setLoading', true)
-    // console.log('action logout', payload)
-    if (payload.forced) { // auth failure detected
-    } else { // logout button clicked
-      try {
-        await http.get('/logout')
-      } catch (e) {
-        if (!e.response || e.response.status === 401) { // server or authorization error
-          // ok please continue
-        } else {
-          return
-        }
-      }
-    }
-    delete http.defaults.headers.common['Authorization']
-    // localStorage.removeItem('user-token') // if the request fails, remove any possible user token if possibl
-    commit('setUser', null)
-    commit('setLayout', 'layout-default')
-    router.push('/')
-    if (payload.forced) commit('setError', { message: 'Session Expired' })
-    commit('setLoading', false)
-  },
-
-  autoSignIn ({ commit }, payload) { // payload.token
-    payload.verified = !USE_OTP
-    console.log('autoSignIn', payload)
-    commit('setUser', payload)
-    http.defaults.headers.common['Authorization'] = 'Bearer ' + payload.token
-    if (!USE_OTP) {
-      commit('setLayout', 'layout-admin')
-      router.push('/dashboard')
-    }
-  },
-
-  autoVerify ({ commit }, payload) { // payload.token
-    payload.verified = true
-    commit('setUser', payload)
-    http.defaults.headers.common['Authorization'] = 'Bearer ' + payload.token
-    commit('setLayout', 'layout-admin')
-    router.push('/reports')
-  },
-  clearError ({ commit }) { commit('setError', null) },
-
-  setNetworkError ({ commit }, payload) { commit('mutateNetworkError', payload) }
 }
-
-/*
-function doSomething() {
-  console.log("10 seconds");
-  setTimeout(doSomething, 10000)
-}
-setTimeout(doSomething, 10000)
-*/
