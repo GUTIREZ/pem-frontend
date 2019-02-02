@@ -43,9 +43,12 @@ export default {
   },  
   methods: {
     onSuccess() {
-      alert(JSON.stringify(this.$store.getters.menu))
+      // alert(JSON.stringify(this.$store.getters.menu))
       http.get('/users/me').then((res) => { 
-        console.log(res.data)
+        console.log(res.data.permissions)
+        
+        console.log(res.data.permissions.indexOf('Role.UPDATEx'))
+
         })
         .catch((error) => {
           console.log(error)

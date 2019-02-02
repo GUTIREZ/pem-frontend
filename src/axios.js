@@ -6,8 +6,29 @@ import { store } from './store'
 // const API_URL = 'http://47.98.140.122:9090'
 const API_URL = 'http://localhost:9090'
 
+
+function getRefreshToken() {
+  let res = null
+  try{
+    let refreshToken = JSON.parse(localStorage.getItem('tokens')).refreshToken
+    if (refreshToken) {
+      http.defaults.headers.common['Authorization'] = 'Bearer ' + refreshToken
+      // http.config.headers.Authorization = `Bearer ` + refreshToken
+      let res = http.get('/auth/refresh')
+      return res
+    }
+  }catch {
+    res.status = 200
+    return res
+    // throw '无可用的刷新凭证，请重新登陆'
+  }
+}
+
 export const http = axios.create({
   baseURL: API_URL,
+  timeout: 5000,
+  //用来处理刷新token后重新请求的自定义变量
+  isRetryRequest: false,
   headers: {
     Accept: 'application/json',
     'Content-Type': 'application/json'
@@ -16,36 +37,105 @@ export const http = axios.create({
 
 http.interceptors.request.use(
   config => {
-    // Do something before request is sent
     config.store = store
+
+    // config.headers.Authorization = "xxxxx"
     return config
   },
   error => {
-    // Do something with request error
+    this.$store.commit('setError', {
+      message: '请求异常'
+    })
     return Promise.reject(error)
   }
 )
 
-// Add a response interceptor
 http.interceptors.response.use(
   response => {
-    // Do something with response data
     return response
   },
-  error => {
-    // Do something with response error
-    // console.log('intercept', JSON.stringify(error))
-    if (error.response && error.response.status === 401) {
-      // auth failed
-      console.info('auth failed')
-      // const myURL = new URL(error.config.url)
-      // if (myURL.pathname !== '/logout' && myURL.pathname !== '/auth/otp') {
-      //   error.config.store.dispatch('logout', { forced: true })
-      // }
+  err => {
+    if (err.response) {
+      let errResp = err.response.data
+      switch (err.response.status) {
+        case 401: // 刷新token
+          // TOKEN_EXPIRED 、 BAD_CREDENTIALS
+          if(errResp.code === 'AUTH.0001') {
+            let config = err.config
+            if (!config.isRetryRequest) {
+              
+              // Promise.resolve(
+              //   config.isRetryRequest = true,
+              //   new Promise((resolve,reject) => {
+              //     try{
+              //       let refreshToken = JSON.parse(localStorage.getItem('tokens')).refreshToken
+              //       if (refreshToken) {
+              //         http.defaults.headers.common['Authorization'] = 'Bearer ' + refreshToken
+              //         let res = http.get('/auth/refresh')
+              //         console.log(JSON.stringify(' ====>>>> res:' + res))
+              //         return Promise.resolve(res);
+              //       }
+              //     }catch {
+              //       config.store.dispatch('logout', { forced: true })
+              //       reject
+              //     }
+              //   })
+              // ).then(data => {
+              //   console.log(JSON.stringify(' ====>>>> data:' + data))
+              //   if(data.status === 200){
+              //     let tokens = data.data
+              //     config.store.dispatch('setToken', tokens)
+              //     // 这边不需要baseURL是因为会重新请求url中已经包含baseURL的部分
+              //     config.baseURL = '';
+              //     //重新请求
+              //     return axios(config);
+              //       // return Promise.resolve('Randy'+data);
+              //   }else {
+              //     config.store.dispatch('logout', { forced: true })
+              //     // reject(res.data.message)
+              //   }
+              // })
+
+              return getRefreshToken()
+                .then(function(res) {
+                  config.isRetryRequest = true
+                  let tokens = res.data
+                  config.store.dispatch('setToken', tokens)
+                  // 这边不需要baseURL是因为会重新请求url中已经包含baseURL的部分
+                  config.baseURL = '';
+                  //重新请求
+                  return axios(config);
+                }).catch(function() {
+                  config.store.dispatch('logout', { forced: true })
+
+                  this.$store.commit('setError', {
+                    message: '自动获取凭证失败，请重新登陆.'
+                  })
+                })
+            }
+          }else {
+            this.$store.commit('setError', {
+              message: errResp.code + ': ' + errResp.message
+            })
+          }
+          break
+        case 500:
+          this.$store.commit('setError', {
+            message: errResp.code + ': ' + errResp.message
+          })
+          break
+      }
+    }else {
+      this.$store.commit('setError', {
+        message: '加载超时'
+      })
     }
-    return Promise.reject(error)
+    return Promise.reject(err)
   }
 )
+
+
+
 
 // let tokenLock = null
 // let tokenTime = null
@@ -104,4 +194,4 @@ http.interceptors.response.use(
 //       exp.setTime(exp.getTime() + expires);
 //   }
 //   document.cookie = name + "=" + escape(value) + ";expires=" + exp.toGMTString();
-// };
+// }
