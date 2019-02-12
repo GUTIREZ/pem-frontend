@@ -8,7 +8,7 @@ export default {
     commit('setError', null)
     let res = null
     try {
-      res = await http.post('/auth', payload)
+      res = await http.post('/auth/signin', payload)
       dispatch('setToken', res.data)
     } catch (e) {
       commit('setError', {

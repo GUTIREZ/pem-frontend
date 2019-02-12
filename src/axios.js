@@ -1,15 +1,10 @@
-import axios from 'axios'
-import { store } from './store'
-// import JWTDecode from 'jwt-decode';
-// import { dispatch } from 'rxjs/internal/observable/pairs';
+import axios from 'axios';
+import JWTDecode from 'jwt-decode';
 
-// const API_URL = process.env.VUE_APP_API_URL
-// const API_URL = 'http://47.98.140.122:9090'
+// import { AuthApi } from './auth.api';
+// import { config } from '../config';
+
 const API_URL = 'http://localhost:9090'
-
-let isRefreshing = false;
-let refreshSubscribers = [];
-
 export const http = axios.create({
   baseURL: API_URL,
   timeout: 5000,
@@ -21,144 +16,117 @@ export const http = axios.create({
 })
 
 http.interceptors.request.use(
-  config => {
-    config.store = store
+  reqConfig => {
+    // reqConfig.headers.authorization = localStorage.getItem('access_token');
 
-    // config.headers.Authorization = "xxxxx"
-    return config
+    // if (reqConfig.url.includes('/auth/logout'))
+    //   reqConfig.headers['X-REFRESH-TOKEN'] = localStorage.getItem(
+    //     'refresh_token',
+    //   );
+
+    return reqConfig;
   },
-  error => {
-    this.$store.commit('setError', {
-      message: '请求异常'
-    })
-    return Promise.reject(error)
-  }
-)
+  err => Promise.reject(err),
+);
 
-function refreshAccessToken() {
-  let refreshToken = JSON.parse(localStorage.getItem('tokens')).refreshToken
-  if (refreshToken) {
-    http.defaults.headers.common['Authorization'] = 'Bearer ' + refreshToken
-    // http.config.headers.Authorization = `Bearer ` + refreshToken
-    let res = http.get('/auth/refresh')
-    return res
-  }
-}
+let isFetchingToken = false;
+let tokenSubscribers = [];
 
 function subscribeTokenRefresh(cb) {
-  refreshSubscribers.push(cb);
+  tokenSubscribers.push(cb);
+}
+function onTokenRefreshed(errRefreshing, token) {
+  tokenSubscribers.map(cb => cb(errRefreshing, token));
+}
+function forceLogout() {
+  isFetchingToken = false;
+  localStorage.clear();
+
+  window.location = '/login';
 }
 
-function onRrefreshed(token) {
-  refreshSubscribers.map(cb => cb(token));
-}
-
-http.interceptors.response.use(response => {
-  return response;
-}, error => {
-  const { config, response: { status } } = error;
-  const originalRequest = config;
-
-  if (status === 498) {
-    if (!isRefreshing) {
-      isRefreshing = true;
-      refreshAccessToken()
-        .then(newToken => {
-          isRefreshing = false;
-          onRrefreshed(newToken);
-        });
-    }
-
-    const retryOrigReq = new Promise((resolve) => {
-      subscribeTokenRefresh(token => {
-        // replace the expired token and retry
-        originalRequest.headers['Authorization'] = 'Bearer ' + token;
-        resolve(axios(originalRequest));
-      });
-    });
-    return retryOrigReq;
-  } else {
-    return Promise.reject(error);
-  }
-})
-
-
-
-// let isFetchingToken = false;
-// let tokenSubscribers = [];
-
-// function subscribeTokenRefresh(cb) {
-//   tokenSubscribers.push(cb);
-// }
-// function onTokenRefreshed(errRefreshing, token) {
-//   tokenSubscribers.map(cb => cb(errRefreshing, token));
-// }
-// function forceLogout() {
-//   isFetchingToken = false;
-//   localStorage.clear();
-
-//   window.location = '/login';
-// }
-
-//刷新token的请求方法
-// function getRefreshToken() {
+// function refreshAccessToken() {
+//   console.info(" ==>>> refresh access token")
 //   const tokens = JSON.parse(localStorage.getItem('tokens'))
 //   const refreshToken = tokens.refreshToken
 //   if (!refreshToken) return forceLogout()
 
-//   http.headers.authorization = 'Bearer ' + refreshToken
+//   // http.headers.authorization = 'Bearer ' + refreshToken
+
+//   http.defaults.headers.common['Authorization'] = 'Bearer ' + refreshToken
 //   let res = http.get('auth/refresh')
 //   return res.data
 // }
 
-// axios.interceptors.response.use(undefined, err => {
-//   if (err.response.config.url.includes('/auth'))
-//     return Promise.reject(err);
+var refreshAccessToken = new Promise(function(resolve, reject) {
+  console.info(" ==>>> refresh access token")
+  const tokens = JSON.parse(localStorage.getItem('tokens'))
+  const refreshToken = tokens.refreshToken
+  if (!refreshToken) return forceLogout()
 
-//   if (err.response.status === 403) return forceLogout();
-//   if (err.response.status !== 401) return Promise.reject(err);
+  // http.headers.authorization = 'Bearer ' + refreshToken
 
-//   if (!isFetchingToken) {
-//     isFetchingToken = true;
+  http.defaults.headers.common['Authorization'] = 'Bearer ' + refreshToken
+  let res = http.get('auth/refresh')
+  // return res.data
+  Promise.resolve(res.data);
+});
 
-//     const tokens = JSON.parse(localStorage.getItem('tokens'))
-//     const refreshToken = tokens.refreshToken
-//     if (!refreshToken) return forceLogout();
 
-//     try {
-//       const isRefreshTokenExpired =
-//         JWTDecode(refreshToken).exp < Date.now() / 1000;
+http.interceptors.response.use(undefined, err => {
+  if (err.response.config.url.includes('/auth/signin'))
+    return Promise.reject(err);
 
-//       if (isRefreshTokenExpired) return forceLogout();
-//     } catch (e) {
-//       return forceLogout();
-//     }
+  if (err.response.status === 403) return forceLogout();
+  if (err.response.status !== 401) return Promise.reject(err);
 
-//     getRefreshToken()
-//       .then(tokens => {
-//         isFetchingToken = false;
+  if (!isFetchingToken) {
+    isFetchingToken = true;
 
-//         onTokenRefreshed(null, tokens);
-//         tokenSubscribers = [];
+    const tokens = JSON.parse(localStorage.getItem('tokens'))
+    const refreshToken = tokens.refreshToken
+    if (!refreshToken) return forceLogout();
 
-//         // localStorage.setItem('tokens', tokens);
-//         this.$store.dispatch("setToken",tokens)
-//       })
-//       .catch(() => {
-//         onTokenRefreshed(new Error('Unable to refresh access token'), null);
-//         tokenSubscribers = [];
+    try {
+      const isRefreshTokenExpired =
+        JWTDecode(refreshToken).exp < Date.now() / 1000;
 
-//         forceLogout();
-//       });
-//   }
+      if (isRefreshTokenExpired) 
+        return forceLogout();
+      else
+        http.defaults.headers.common['Authorization'] = 'Bearer ' + refreshToken
+        let res = http.get('auth/refresh')
+        console.info(res.data.token)
+    } catch (e) {
+      return forceLogout();
+    }
 
-//   const initTokenSubscriber = new Promise((resolve, reject) => {
-//     subscribeTokenRefresh((errRefreshing, newToken) => {
-//       if (errRefreshing) return reject(errRefreshing);
+    refreshAccessToken.then(resp => {
+        console.info("==>>> refresh access token resp" + resp.data.token)
+        isFetchingToken = false;
 
-//       err.config.headers.authorization = newToken;
-//       return resolve(axios(err.config));
-//     });
-//   });
-//   return initTokenSubscriber;
-// })
+        onTokenRefreshed(null, newAccessToken);
+        tokenSubscribers = [];
+
+        localStorage.setItem('access_token', newAccessToken);
+      })
+      .catch(() => {
+        onTokenRefreshed(new Error('Unable to refresh access token'), null);
+        tokenSubscribers = [];
+
+        forceLogout();
+      });
+  }
+
+  const initTokenSubscriber = new Promise((resolve, reject) => {
+    subscribeTokenRefresh((errRefreshing, newToken) => {
+      if (errRefreshing) return reject(errRefreshing);
+
+      err.config.headers.authorization = newToken;
+      return resolve(axios(err.config));
+    });
+  });
+  return initTokenSubscriber;
+})
+
+export default http;
